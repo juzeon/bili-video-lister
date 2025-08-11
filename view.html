@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="no-referrer">
+    <title>视频列表</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+            overflow-x: auto;
+            padding: 0 20px;
+        }
+
+        .tab-button {
+            background: none;
+            border: none;
+            padding: 15px 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #6c757d;
+            border-radius: 8px 8px 0 0;
+            margin: 0 2px;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .tab-button:hover {
+            background: #e9ecef;
+            color: #495057;
+        }
+
+        .tab-button.active {
+            background: #007bff;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+        }
+
+        .tab-content {
+            display: none;
+            padding: 30px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        .video-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: all 0.3s ease;
+            border: 1px solid #e9ecef;
+        }
+
+        .video-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .video-cover {
+            position: relative;
+            width: 100%;
+            height: 200px;
+            overflow: hidden;
+        }
+
+        .video-cover img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .video-card:hover .video-cover img {
+            transform: scale(1.05);
+        }
+
+        .video-info {
+            padding: 20px;
+        }
+
+        .video-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .video-time {
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .video-time::before {
+            content: "📅";
+            margin-right: 8px;
+        }
+
+        .video-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .copy-button {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            flex: 1;
+        }
+
+        .copy-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+        }
+
+        .copy-button:active {
+            transform: translateY(0);
+        }
+
+        .copy-button.copied {
+            background: linear-gradient(45deg, #17a2b8, #6f42c1);
+        }
+
+        .visit-link {
+            background: linear-gradient(45deg, #007bff, #6610f2);
+            color: white;
+            text-decoration: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+        }
+
+        .visit-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+            text-decoration: none;
+            color: white;
+        }
+
+        .visit-link::after {
+            content: "🔗";
+            margin-left: 8px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #6c757d;
+        }
+
+        .stats {
+            background: #f8f9fa;
+            padding: 15px 30px;
+            border-top: 1px solid #e9ecef;
+            text-align: center;
+            color: #6c757d;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 8px;
+            }
+
+            .header {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .video-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .tabs {
+                padding: 0 10px;
+            }
+
+            .tab-button {
+                padding: 12px 15px;
+                font-size: 0.9rem;
+            }
+
+            .tab-content {
+                padding: 20px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📺 视频列表</h1>
+            <p>按半年时间分组浏览</p>
+        </div>
+        
+        <div class="tabs" id="tabs">
+            <!-- 动态生成的选项卡 -->
+        </div>
+        
+        <div id="tabContent">
+            <!-- 动态生成的内容 -->
+        </div>
+        
+        <div class="stats" id="stats">
+            正在加载统计信息...
+        </div>
+    </div>
+
+    <div class="notification" id="notification">
+        复制成功！
+    </div>
+
+    <script>
+        let videosData = [];
+        let groupedVideos = {};
+
+        // 加载视频数据
+        async function loadVideos() {
+            try {
+                const response = await fetch('./videos.json');
+                videosData = await response.json();
+                groupVideosByHalfYear();
+                renderTabs();
+                updateStats();
+            } catch (error) {
+                console.error('加载视频数据失败:', error);
+                document.getElementById('stats').textContent = '加载失败，请检查 videos.json 文件';
+            }
+        }
+
+        // 按半年分组视频
+        function groupVideosByHalfYear() {
+            groupedVideos = {};
+            
+            videosData.forEach(video => {
+                const date = new Date(video.time * 1000);
+                const year = date.getFullYear();
+                const month = date.getMonth() + 1;
+                const halfYear = month <= 6 ? 1 : 2;
+                const key = `${year}年${halfYear === 1 ? '上' : '下'}半年`;
+                
+                if (!groupedVideos[key]) {
+                    groupedVideos[key] = [];
+                }
+                groupedVideos[key].push(video);
+            });
+
+            // 按时间倒序排序各组
+            Object.keys(groupedVideos).forEach(key => {
+                groupedVideos[key].sort((a, b) => b.time - a.time);
+            });
+        }
+
+        // 渲染选项卡
+        function renderTabs() {
+            const tabsContainer = document.getElementById('tabs');
+            const contentContainer = document.getElementById('tabContent');
+            
+            tabsContainer.innerHTML = '';
+            contentContainer.innerHTML = '';
+
+            const sortedKeys = Object.keys(groupedVideos).sort((a, b) => {
+                // 按年份和半年排序（最新的在前）
+                const yearA = parseInt(a.match(/(\d+)年/)[1]);
+                const yearB = parseInt(b.match(/(\d+)年/)[1]);
+                if (yearA !== yearB) return yearB - yearA;
+                
+                const halfA = a.includes('上') ? 1 : 2;
+                const halfB = b.includes('上') ? 1 : 2;
+                return halfB - halfA;
+            });
+
+            sortedKeys.forEach((key, index) => {
+                // 创建选项卡按钮
+                const tabButton = document.createElement('button');
+                tabButton.className = `tab-button ${index === 0 ? 'active' : ''}`;
+                tabButton.textContent = `${key} (${groupedVideos[key].length})`;
+                tabButton.onclick = () => switchTab(key);
+                tabsContainer.appendChild(tabButton);
+
+                // 创建选项卡内容
+                const tabContent = document.createElement('div');
+                tabContent.className = `tab-content ${index === 0 ? 'active' : ''}`;
+                tabContent.id = `tab-${key}`;
+                
+                const videoGrid = document.createElement('div');
+                videoGrid.className = 'video-grid';
+                
+                groupedVideos[key].forEach(video => {
+                    const videoCard = createVideoCard(video);
+                    videoGrid.appendChild(videoCard);
+                });
+                
+                tabContent.appendChild(videoGrid);
+                contentContainer.appendChild(tabContent);
+            });
+        }
+
+        // 创建视频卡片
+        function createVideoCard(video) {
+            const card = document.createElement('div');
+            card.className = 'video-card';
+            
+            const formatDate = (timestamp) => {
+                const date = new Date(timestamp * 1000);
+                return date.toLocaleDateString('zh-CN', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            };
+
+            card.innerHTML = `
+                <div class="video-cover">
+                    <img src="${video.cover}" alt="${video.title}" loading="lazy" referrerpolicy="no-referrer"
+                         onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDMwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjZjhmOWZhIi8+Cjx0ZXh0IHg9IjE1MCIgeT0iMTAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjNmM3NTdkIiBmb250LXNpemU9IjE0Ij7lr7nosaHliqDovb3lpLHotKU8L3RleHQ+Cjwvc3ZnPg=='">
+                </div>
+                <div class="video-info">
+                    <div class="video-title">${video.title}</div>
+                    <div class="video-time">${formatDate(video.time)}</div>
+                    <div class="video-actions">
+                        <button class="copy-button" onclick="copyToClipboard('${video.aid}', 'AID', this)">
+                            复制 AID
+                        </button>
+                        <button class="copy-button" onclick="copyToClipboard('${video.bid}', 'BID', this)">
+                            复制 BID
+                        </button>
+                        <a href="https://www.bilibili.com/video/${video.bid}" target="_blank" class="visit-link">
+                            观看视频
+                        </a>
+                    </div>
+                </div>
+            `;
+            
+            return card;
+        }
+
+        // 切换选项卡
+        function switchTab(activeKey) {
+            // 更新按钮状态
+            const buttons = document.querySelectorAll('.tab-button');
+            buttons.forEach(button => {
+                if (button.textContent.startsWith(activeKey)) {
+                    button.classList.add('active');
+                } else {
+                    button.classList.remove('active');
+                }
+            });
+
+            // 更新内容显示
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(content => {
+                if (content.id === `tab-${activeKey}`) {
+                    content.classList.add('active');
+                } else {
+                    content.classList.remove('active');
+                }
+            });
+        }
+
+        // 复制到剪贴板
+        async function copyToClipboard(text, type, button) {
+            try {
+                await navigator.clipboard.writeText(text);
+                
+                // 更新按钮状态
+                const originalText = button.textContent;
+                button.textContent = '已复制';
+                button.classList.add('copied');
+                
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.classList.remove('copied');
+                }, 2000);
+
+                // 显示通知
+                showNotification(`${type} 已复制到剪贴板`);
+            } catch (error) {
+                console.error('复制失败:', error);
+                showNotification('复制失败，请手动复制');
+            }
+        }
+
+        // 显示通知
+        function showNotification(message) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // 更新统计信息
+        function updateStats() {
+            const totalVideos = videosData.length;
+            const totalPeriods = Object.keys(groupedVideos).length;
+            const statsElement = document.getElementById('stats');
+            
+            statsElement.textContent = `共 ${totalVideos} 个视频，分为 ${totalPeriods} 个时间段`;
+        }
+
+        // 页面加载时执行
+        document.addEventListener('DOMContentLoaded', loadVideos);
+    </script>
+</body>
+</html>
